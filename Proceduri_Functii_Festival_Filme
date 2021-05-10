@@ -1,0 +1,210 @@
+use Festival_Filme
+
+-- Functiile pentru validarea parametrilor din tabelul Filme
+
+Create FUNCTION verif_film(@nume_film VARCHAR(40))
+RETURNS INT AS 
+BEGIN
+    DECLARE @raspuns INT = 0;
+
+    select @raspuns = count(f.nume)
+    from Filme as f
+    where f.nume = @nume_film;
+
+    RETURN @raspuns;
+END;
+
+Create FUNCTION verif_durata(@timp FLOAT)
+RETURNS BIT AS 
+BEGIN
+    DECLARE @v_timp BIT;
+    set @v_timp = 0;
+
+    IF (@timp <= 0.5)
+        set @v_timp = 1;
+
+    RETURN @v_timp;
+END;
+
+-- Procedura pentru inserarea de valori in tabelul Filme
+
+Create PROCEDURE insert_film(@nume_film varchar(40), @durata FLOAT, @categorie VARCHAR(30))
+AS 
+BEGIN
+    DECLARE @nr INT = 0;
+    set @nr = dbo.verif_film(@nume_film);
+
+    DECLARE @timp_verif BIT;
+    set @timp_verif = dbo.verif_durata(@durata);
+
+    IF (@nr = 0 AND @timp_verif = 0)
+        insert into Filme(nume, durata, categorie)
+        values(@nume_film, @durata, @categorie);
+    ELSE
+        PRINT 'Nu s-a inserat filmul. Verificati parametrii filmului.';
+END;
+GO
+
+-- Executarea procedurii de inserare in tabelul Filme
+
+exec insert_film 'John Wick 3', 1.55, 'Actiune';
+exec insert_film 'Mihai Comsa', 0.3, 'Familie';
+
+-- Functiile pentru validarea parametrilor din tabelul Ecrane
+
+Create FUNCTION verif_ecran(@nume_ecran VARCHAR(50))
+RETURNS INT AS 
+BEGIN
+    DECLARE @raspuns INT = 0;
+
+    select @raspuns = count(e.nume_ecran)
+    from Ecrane as e
+    where e.nume_ecran = @nume_ecran;
+
+    RETURN @raspuns;
+END;
+
+Create FUNCTION verif_cod_sponsor(@numar_cod INT)
+RETURNS INT AS 
+BEGIN
+    DECLARE @exista INT;
+    set @exista = 0;
+
+    select @exista = count(s.cod_sponsor)
+    from Sponsori as s 
+    where s.cod_sponsor = @numar_cod;
+
+    RETURN @exista;
+END;
+
+-- Procedura pentru inserarea de valori in tabelul Ecrane
+
+Create PROCEDURE insert_ecran(@nume_ecran VARCHAR(50), @cod_sponsor INT)
+AS 
+BEGIN
+    DECLARE @verif_cod INT;
+    set @verif_cod = dbo.verif_cod_sponsor(@cod_sponsor);
+
+    DECLARE @verif_ecran_nume INT;
+    set @verif_ecran_nume = dbo.verif_ecran(@nume_ecran);
+
+    IF (@verif_cod = 0)
+        PRINT 'Codul nu exista.';
+
+    IF (@verif_ecran_nume <> 0)
+        PRINT 'Numele exista.';
+
+    IF (@verif_cod = 1 AND @verif_ecran_nume = 0)
+        insert into Ecrane(nume_ecran, cod_sponsor)
+        values(@nume_ecran, @cod_sponsor);
+    ELSE
+        PRINT 'Nu s-a inserat ecranul. Verificati parametrii ecranului.';
+END;
+GO
+
+-- Executarea procedurii de inserare in tabelul Ecrane
+
+exec insert_ecran 'Ecran Bonus by Albalct', 15;
+
+-- Functiile pentru validarea parametrilor din tabelul EcranFilm
+
+Create FUNCTION verif_cod_film(@nr_cod_film INT)
+RETURNS BIT AS 
+BEGIN
+    DECLARE @exista BIT = 0;
+    DECLARE @numar INT;
+
+    select @numar = count(cod_film)
+    from Filme
+    where cod_film = @nr_cod_film;
+
+    IF @numar > 0 
+        set @exista = 1;
+
+    RETURN @exista;
+END;
+
+Create FUNCTION verif_cod_ecran(@nr_cod_ecran INT)
+RETURNS BIT AS 
+BEGIN
+    DECLARE @exista BIT = 0;
+    DECLARE @numar INT;
+
+    select @numar = count(cod_ecran)
+    from Ecrane
+    where cod_ecran = @nr_cod_ecran;
+    
+    IF @numar > 0
+     set @exista = 1;
+
+    RETURN @exista;
+END;
+
+Create FUNCTION verif_coduri_ecran_film(@nr_cod_ecran INT, @nr_cod_film INT)
+RETURNS BIT AS 
+BEGIN
+    DECLARE @raspuns BIT = 0;
+    DECLARE @exista INT;
+
+    select @exista = count(cod_ecran)
+    from EcranFilm
+    where cod_ecran = @nr_cod_ecran AND cod_film = @nr_cod_film;
+
+    IF (@exista = 1)
+        set @raspuns = 1;
+
+    RETURN @raspuns;
+END;
+
+-- Procedura pentru inserarea de valori in tabelul EcranFilm
+
+Create PROCEDURE insert_ecranFilm(@cod_ecran INT, @cod_film INT, @ora_incepere TIME, @restrictii_varsta INT)
+AS 
+BEGIN
+    DECLARE @exista_ecran BIT;
+    DECLARE @exista_film BIT;
+    DECLARE @exista BIT;
+    set @exista_ecran = dbo.verif_cod_ecran(@cod_ecran);
+    set @exista_film = dbo.verif_cod_film(@cod_film);
+    set @exista = dbo.verif_coduri_ecran_film(@cod_ecran, @cod_film);
+
+    IF (@exista = 1)
+        PRINT 'Exista deja acest film la acest ecran.';
+
+    IF (@exista_ecran = 0)
+        PRINT 'Nu exista ecranul dorit.';
+
+    IF (@exista_film = 0)
+        PRINT 'Nu exista filmul dorit.';
+
+    IF (@exista_film = 1 AND @exista_ecran = 1 AND @exista = 0)
+        insert into EcranFilm(cod_ecran, cod_film, ora_incepere, restrictii_varsta)
+        values(@cod_ecran, @cod_film, @ora_incepere, @restrictii_varsta);
+    ELSE
+        PRINT 'Nu s-a putut adauga valoare in EcranFilm. Verificati parametrii introdusi.';
+END;
+GO
+
+-- Executarea procedurii de inserare in tabelul EcranFilm
+
+exec insert_ecranFilm 15, 16, '16:30:00.00', 16;
+
+-- Alte operatii :
+
+delete from EcranFilm
+where restrictii_varsta = 16;
+
+delete from Filme
+where nume like 'John%'
+
+delete from Ecrane
+where nume_ecran like '%Bonus%'
+
+select * from Sponsori;
+select * from Filme;
+select * from Ecrane;
+select * from EcranFilm;
+
+drop PROCEDURE insert_film;
+drop PROCEDURE insert_ecran;
+drop PROCEDURE insert_ecranFilm;

@@ -1,0 +1,35 @@
+use Festival_Filme
+
+Create VIEW vw_mancare_Cort AS
+SELECT p.nume as Nume_produs, c.nume as Nume_cort, p.pret from DistribuiriProduse as d 
+inner join Produse as p on d.cod_produs = p.cod_produs
+inner join Corturi as c on d.cod_cort = c.cod_cort
+where d.tip_cantitate = 'portii';
+
+select * from vw_mancare_Cort;
+
+Create TRIGGER [dbo].[La_insert_cort]
+ON [dbo].[Corturi]
+FOR INSERT 
+AS 
+BEGIN
+    Print 'S-a folosit operatia : INSERT.'
+    Print 'S-a inserat int abelul Corturi.';
+    Print 'La data : '; Print GETDATE();
+END;
+
+insert into Corturi (nume, ora_deschidere, ora_inchidere)
+values ('Testare cort', '12:00:00', '21:00:00');
+
+Create TRIGGER [dbo].[La_delet_cort]
+on [dbo].[Corturi]
+FOR DELETE 
+AS 
+BEGIN
+    Print 'S-a folosit operatia : DELETE';
+    Print 'S-a sters din tabelul Corturi';
+    Print 'La data : '; Print GETDATE();
+END;
+
+delete from Corturi
+where nume = 'Testare cort';

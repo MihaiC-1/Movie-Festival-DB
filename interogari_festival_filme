@@ -1,0 +1,73 @@
+use Festival_Filme;
+
+-- Interogare cu UNION, INTERSECT sau EXCEPT
+/*
+    Afisarea codului produselor alcoolice ce au pretul mai mic de 10 
+    lei si au fost distribuite in numar mai mare de 60 de bucati/portii.
+*/
+select cod_produs from Produse
+where pret <= 10 and alcool not like '0%'
+INTERSECT
+select cod_produs from DistribuiriProduse
+where cantitate > 60
+
+-- Interogare cu INNER JOIN
+
+/*
+    Afisarea filmelor, orei de incepere si locul unde se difuzeaza, 
+    ce au restrictia de varsata egala cu 18.
+*/
+
+select f.nume, e.ora_incepere, e.restrictii_varsta, d.nume_ecran from EcranFilm as e
+inner join Filme as f on f.cod_film = e.cod_film
+inner join Ecrane as d on d.cod_ecran = e.cod_ecran
+where e.restrictii_varsta = 18;
+
+-- Interogare cu LEFT JOIN
+
+/*
+    Afisarea tuturoa sponsorilor ce au investit o suma mai mica de 4000, 
+    si in caz de existenta ce ecran sponsorizeaza ei.
+*/
+
+select * from Sponsori as s LEFT JOIN Ecrane as e 
+on s.cod_sponsor = e.cod_sponsor
+where s.suma_investita < 4000
+
+-- Interogare cu clauza GROUP BY si HAVING
+
+/*
+    Afisarea codului produselor ce au fost distribuite in cantitati mari
+    la corturile existente, si afisarea acestor cantitati totale.
+*/
+
+select cod_produs,
+SUM(cantitate) as cantitate_totala
+from DistribuiriProduse 
+GROUP BY cod_produs
+HAVING SUM(cantitate) > 200
+
+-- Interogare cu clauza GROUP BY si HAVING
+
+/*
+    Afisarea caloriilor si numarul produselor cu acele calorii, dintre 
+    produsele alcoolice.
+*/
+
+select calorii,
+count(calorii) as numar_produse
+from Produse 
+where alcool not like '0%'
+Group by calorii
+
+-- interogare cu clauza GROUP BY si HAVING
+
+/*
+    Afisarea codului corturilor si cantitatea maxima primita din oricare dintre
+    produsele sale.
+*/
+
+select cod_cort, 
+max(cantitate) as cantitate_maxima_distribuita
+from DistribuiriProduse
+GROUP BY cod_cort
